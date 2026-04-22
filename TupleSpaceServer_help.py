@@ -153,6 +153,16 @@ def handle_request(message):
             # Return "OK (<key>, <value>) added" or "ERR <key> already exists".
             increment_stat("put_count")
 
+            if len(value) > 999 or len(key + " " + value) > 970:
+                increment_stat("error_count")
+                return "ERR Tuple too large"
+
+            if key in tuple_space:
+                increment_stat("error_count")
+                return f"ERR {key} already exists"
+
+            tuple_space[key] = value
+            return f"OK ({key}, {value}) added"
 
         else:
             increment_stat("error_count")
