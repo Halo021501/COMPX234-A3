@@ -41,13 +41,38 @@ def main():
             # X is "R" for READ and "G" for GET.
             # Hint: for READ/GET, size = 6 + len(key). For PUT, size = 7 + len(key) + len(value).
             # Reject lines with invalid format or key+" "+value > 970 chars.
+            key = parts[1]
+            value = parts[2] if len(parts) > 2 else ""
 
+            collated_size = len(key) + (len(value) + 1 if value else 0)
+            if collated_size > 970:
+                print(f"Error: ignored entry. Collated size exceeds 970 characters.")
+                continue
+
+            if cmd == "READ":
+                req_inner = f"R {key}"
+            elif cmd == "GET":
+                req_inner = f"G {key}"
+            elif cmd == "PUT":
+                req_inner = f"P {key} {value}"
+            else:
+                continue
+
+            req_len = len(req_inner) + 4
+            message = f"{req_len:03d} {req_inner}"
 
             # TASK 3: Send the message to the server, then receive the response.
             # - Send:    sock.sendall(message.encode())
             # - Receive: first read 3 bytes to get the response size (like the server does).
             #            Then read the remaining (size - 3) bytes to get the response body.
+            sock.sendall(message.encode())
 
+            size_bytes = sock.recv(3)
+            if not size_bytes:
+                break
+
+            resp_size = int(size_bytes.decode())
+            response_buffer = sock.recv(resp_size - 3)
 
             response = response_buffer.decode().strip()
             print(f"{line}: {response}")
